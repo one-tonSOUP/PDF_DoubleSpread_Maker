@@ -6,3 +6,5 @@ Transform standard PDFs into sleek two-page spreads for easier printing and view
 - Merge every two pages into one A4-sized image
 - Generate a new optimized PDF file
 - Simple CLI-based interface
+
+NOTE: This project is yet to be completed.
