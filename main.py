@@ -23,6 +23,20 @@ class DoubleSpread:
         return self.pages
     
     def combine_images(self, image_1, image_2, names[]):
+        
+        image_1 = matplotlib.image.imread(names[0])
+        image_2 = matplotlib.image.imread(names[1])
+
+        row1 = np.concatenate((img1, img2), axis=1)
+        row2 = np.concatenate((img3, img4), axis=1)
+        new_image = np.concatenate((row1, row2))
+
+        # or
+        row1 = np.hstack((img1, img2))
+        row2 = np.hstack((img3, img4))
+        new_image = np.vstack((row1, row2))
+
+        matplotlib.image.imsave('new.png', new_image)
         # START WORKING HERE . .
         return None
     
