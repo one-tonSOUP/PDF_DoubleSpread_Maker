@@ -66,59 +66,58 @@ class DoubleSpread:
 
         i = 0
         total_pages = len(pages)
+        spread_counter = 0  # To name spreads in sequence
 
         while i < total_pages:
             if i < single_limit:
+                # Single image with blank right
                 img = Image.open(pages[i]).convert("RGB")
                 img_width, img_height = img.size
-
-                # Create blank canvas with width = 2 * image width, height = image height
                 canvas = Image.new("RGB", (img_width * 2, img_height), "white")
-
-                # Create right-side blank image of same size as left image
                 blank_right = Image.new("RGB", (img_width, img_height), "white")
-
-                # Paste original image on the left, blank image on the right
                 canvas.paste(img, (0, 0))
                 canvas.paste(blank_right, (img_width, 0))
 
-                output_path = os.path.join(output_dir, f"spread_single_{i}.jpg")
+                output_path = os.path.join(output_dir, f"spread_{spread_counter:03}.jpg")
                 canvas.save(output_path)
-                # Print log . .
-                sys.stdout.write(f"\r[double_spread_log] Saved: spread_double_{i}.jpg")
+                sys.stdout.write(f"\r[double_spread_log] Saved: spread_{spread_counter:03}.jpg")
                 sys.stdout.flush()
+                spread_counter += 1
                 i += 1
 
             else:
                 if i + 1 < total_pages:
-                    # Pair and merge two images side by side
                     img1 = Image.open(pages[i]).convert("RGB")
-                    img2 = Image.open(pages[i+1]).convert("RGB")
+                    img2 = Image.open(pages[i + 1]).convert("RGB")
 
                     img1_resized = img1.resize((A4_WIDTH // 2, A4_HEIGHT))
                     img2_resized = img2.resize((A4_WIDTH // 2, A4_HEIGHT))
-
                     canvas = Image.new("RGB", (A4_WIDTH, A4_HEIGHT), "white")
                     canvas.paste(img1_resized, (0, 0))
                     canvas.paste(img2_resized, (A4_WIDTH // 2, 0))
-                    canvas.save(os.path.join(output_dir, f"spread_double_{i}_{i+1}.jpg"))
-                    # Print log . .
-                    sys.stdout.write(f"\r[double_spread_log] Saved: spread_double_{i}_{i+1}.jpg")
+
+                    output_path = os.path.join(output_dir, f"spread_{spread_counter:03}.jpg")
+                    canvas.save(output_path)
+                    sys.stdout.write(f"\r[double_spread_log] Saved: spread_{spread_counter:03}.jpg")
                     sys.stdout.flush()
+                    spread_counter += 1
                     i += 2
                 else:
-                    # Final leftover image
+                    # Final leftover image, same treatment as single
                     img = Image.open(pages[i]).convert("RGB")
                     img_width, img_height = img.size
                     canvas = Image.new("RGB", (img_width * 2, img_height), "white")
                     blank_right = Image.new("RGB", (img_width, img_height), "white")
-                    canvas.paste(img, (0, 0))  # Left align without stretching
+                    canvas.paste(img, (0, 0))
                     canvas.paste(blank_right, (img_width, 0))
-                    canvas.save(os.path.join(output_dir, f"spread_single_last_{i}.jpg"))
-                    # Print log . .
-                    sys.stdout.write(f"\r[double_spread_log] Saved: spread_double_{i}_{i+1}.jpg")
+
+                    output_path = os.path.join(output_dir, f"spread_{spread_counter:03}.jpg")
+                    canvas.save(output_path)
+                    sys.stdout.write(f"\r[double_spread_log] Saved: spread_{spread_counter:03}.jpg")
                     sys.stdout.flush()
+                    spread_counter += 1
                     i += 1
+
 
 
     # 🧪 Example usage:
@@ -142,10 +141,58 @@ class DoubleSpread:
         # START WORKING HERE . .
         return None"""
     
+    def create_spread_pdf(self):
+        input_dir = "output_spreads"
+        orientation = input("\n\nChoose orientation - Landscape [L] or Portrait [P]: ").strip().upper()
+        output_pdf_path = self.pdfPath[:-4] + "_"  + orientation + "_" + "final.pdf"
+
+        if orientation not in ("L", "P"):
+            print("[ERROR] Invalid input. Use 'L' or 'P'.")
+            return
+
+        image_filenames = sorted([
+            fname for fname in os.listdir(input_dir)
+            if fname.lower().endswith(('.jpg', '.jpeg', '.png'))
+        ])
+
+        images = [
+            Image.open(os.path.join(input_dir, fname)).convert("RGB")
+            for fname in image_filenames
+        ]
+
+        processed_images = []
+
+        for img in images:
+            # Rotate image if portrait mode is chosen
+            if orientation == "P":
+                img = img.rotate(-90, expand=True)
+            processed_images.append(img)
+
+        # Save as multi-page PDF
+        if processed_images:
+            processed_images[0].save(
+                output_pdf_path,
+                save_all=True,
+                append_images=processed_images[1:]
+            )
+            print(f"\nPDF generated: {output_pdf_path}")
+        else:
+            print("\nNo images found to include in PDF.")
+
+    
     def create_pdf(self):
-        self.pdf_to_img()
-        self.generate_spread_pages()
-        print("\n\nAll steps completed..!")
+        user_response = input("\n\nPress Y to follow all the steps, N to skip to creating PDF from the merged generated images : ")
+        if(user_response == 'Y'):
+            self.pdf_to_img()
+            self.generate_spread_pages()
+            self.create_spread_pdf()
+            print("\n\nAll steps completed..!")
+        elif(user_response == 'N'):
+            self.create_spread_pdf()
+            print("\n\nAll steps completed..!")
+        else:
+            print("\n\033[1mInvalid input!\033[0m\nPlease note the input must be in \033[1mY/N\033[0m.")
+            exit()
         return None
 
 
